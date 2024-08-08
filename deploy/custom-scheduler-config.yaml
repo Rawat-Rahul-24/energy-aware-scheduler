@@ -10,6 +10,9 @@ profiles:
     filter:
       enabled:
         - name: NodeSelectorPlugin
+    postFilter:
+      enabled:
+        - name: NodeSelectorPlugin    
     # score:
     #   enabled:
     #     - name: EnergyAwareScheduler

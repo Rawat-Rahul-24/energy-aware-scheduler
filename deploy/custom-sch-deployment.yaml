@@ -10,27 +10,36 @@ metadata:
   name: custom-scheduler
   namespace: kube-system
 rules:
-- apiGroups: ["storage.k8s.io"]
-  resources: ["csinodes", "storageclasses", "csidrivers", "csistoragecapacities"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["persistentvolumeclaims"]
-  verbs: ["update"]
+  resources: ["namespaces", "nodes", "pods", "services", "replicationcontrollers", "persistentvolumes", "persistentvolumeclaims", "pods/binding"]
+  verbs: ["list", "get", "watch", "create"]
+- apiGroups: ["apps"]
+  resources: ["replicasets", "statefulsets"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csinodes", "csidrivers", "csistoragecapacities", "storageclasses"]
+  verbs: ["list", "get", "watch"]
 - apiGroups: ["events.k8s.io"]
   resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: [""]
+  resources: ["nodes/status", "pods/status"]
   verbs: ["patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: custom-scheduler-as-volume-scheduler
+  name: custom-scheduler-binding
 subjects:
 - kind: ServiceAccount
   name: custom-scheduler
   namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: system:volume-scheduler
+  name: custom-scheduler
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -89,8 +98,8 @@ spec:
       serviceAccountName: custom-scheduler
       containers:
       - name: custom-scheduler
-        image: custom-scheduler:latest
-        imagePullPolicy: IfNotPresent
+        image: rawatrahul24/custom-scheduler:latest
+        imagePullPolicy: Always
         command:
         - /root/custom-scheduler
         - --config=/etc/kubernetes/custom-scheduler/custom-scheduler-config.yaml
