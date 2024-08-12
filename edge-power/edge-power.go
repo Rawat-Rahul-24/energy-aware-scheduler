@@ -3,6 +3,7 @@ package edgepower
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/api"
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-    raspberryPiPromURL   = "http://localhost:9090"
-    // raspberryPiPromURL   = "http://prometheus-k8s.monitoring.svc:9090"
+    // raspberryPiPromURL   = "http://localhost:9090"
+    raspberryPiPromURL   = "http://prometheus-k8s.monitoring.svc:9090"
     raspberryPiQuery     = `sum by (instance)(raspberry_pi_power_watts)`
 )
 
@@ -63,9 +64,15 @@ func parseAllRaspberryPiNodeEnergies(result model.Value) map[string]float64 {
         klog.Errorf("Unexpected result format from Prometheus: %v", result)
         return energyMetrics
     }
-
+    klog.Infof("parsing the result from prometheus")
     for _, sample := range vector {
-        nodeIP := string(sample.Metric["instance"])
+        instance := string(sample.Metric["instance"])
+        klog.Infof("found instance %s", instance)
+        nodeIP := instance
+        // Remove port from the instance string, assuming the format is "IP:PORT"
+        if colonIndex := strings.LastIndex(instance, ":"); colonIndex != -1 {
+            nodeIP = instance[:colonIndex]
+        }
         value, err := strconv.ParseFloat(string(sample.Value.String()), 64)
         if err != nil {
             klog.Errorf("Error parsing energy value for node IP %s: %v", nodeIP, err)

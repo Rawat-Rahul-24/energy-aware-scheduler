@@ -59,7 +59,9 @@ func (pl *NodeSelectorPlugin) Filter(ctx context.Context, cycleState *framework.
 	// Fetch energy data for all nodes once and store in CycleState
 	stateData, err := cycleState.Read(EnergyDataKey)
 	if err != nil {
+        klog.Infof("no state data present")
 		energyMetrics, err := pl.getAllNodeEnergies()
+        klog.Infof("energy data fetched from prometheus %v", energyMetrics)
 		if err != nil {
 			return framework.NewStatus(framework.Error, fmt.Sprintf("Error getting node energies: %v", err))
 		}
@@ -141,6 +143,7 @@ func New(_ runtime.Object, handle framework.Handle) (framework.Plugin, error) {
 
         // Map node names to their IPs
         nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+         klog.Infof("Preparing Node ip map")
         if err != nil {
             return nil, fmt.Errorf("error listing nodes: %v", err)
         }
@@ -152,6 +155,7 @@ func New(_ runtime.Object, handle framework.Handle) (framework.Plugin, error) {
                 }
             }
         }
+        klog.Infof("Node ip map %v", nodeIPMap)
     }
 
     return &NodeSelectorPlugin{
